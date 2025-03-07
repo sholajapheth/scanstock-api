@@ -1,3 +1,4 @@
+// src/users/entities/user.entity.ts
 import {
   Entity,
   Column,
@@ -5,10 +6,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Product } from '../../products/entities/product.entity';
 import { Sale } from '../../sales/entities/sale.entity';
+import { Business } from '../../business/entities/business.entity';
 
 @Entity('users')
 export class User {
@@ -16,7 +19,10 @@ export class User {
   id: number;
 
   @Column()
-  name: string;
+  firstName: string;
+
+  @Column()
+  lastName: string;
 
   @Column({ unique: true })
   email: string;
@@ -26,10 +32,22 @@ export class User {
   password: string;
 
   @Column({ nullable: true })
-  businessName: string;
+  profilePicture: string;
+
+  @Column({ default: false })
+  isEmailVerified: boolean;
 
   @Column({ default: true })
   isActive: boolean;
+
+  @Column({ nullable: true })
+  verificationToken: string;
+
+  @Column({ nullable: true })
+  resetPasswordToken: string;
+
+  @Column({ nullable: true })
+  resetPasswordExpires: Date;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -42,4 +60,12 @@ export class User {
 
   @OneToMany(() => Sale, (sale) => sale.user)
   sales: Sale[];
+
+  @OneToOne(() => Business, (business) => business.owner)
+  business: Business;
+
+  // Virtual property to get full name
+  get fullName(): string {
+    return `${this.firstName} ${this.lastName}`;
+  }
 }
