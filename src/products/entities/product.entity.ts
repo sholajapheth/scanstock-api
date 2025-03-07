@@ -23,7 +23,7 @@ export class Product {
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 
-  @Column({ unique: true })
+  @Column()
   barcode: string;
 
   @Column({ nullable: true })
