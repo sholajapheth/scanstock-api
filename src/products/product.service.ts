@@ -1,3 +1,4 @@
+// src/products/product.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -8,12 +9,14 @@ import { Repository, Raw } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { ActivitiesService } from '../activities/activities.service';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productsRepository: Repository<Product>,
+    private readonly activitiesService: ActivitiesService,
   ) {}
 
   async create(
@@ -34,7 +37,21 @@ export class ProductsService {
       userId,
     });
 
-    return this.productsRepository.save(product);
+    const savedProduct = await this.productsRepository.save(product);
+
+    // Log activity
+    await this.activitiesService.logActivity(
+      userId,
+      'product_added',
+      `Added new product: ${savedProduct.name}`,
+      savedProduct.id,
+      'product',
+      {
+        entityName: savedProduct.name,
+      },
+    );
+
+    return savedProduct;
   }
 
   async findAll(userId: number): Promise<Product[]> {
@@ -81,12 +98,40 @@ export class ProductsService {
     // Update product fields
     Object.assign(product, updateProductDto);
 
-    return this.productsRepository.save(product);
+    const updatedProduct = await this.productsRepository.save(product);
+
+    // Log activity
+    await this.activitiesService.logActivity(
+      userId,
+      'product_updated',
+      `Updated product: ${updatedProduct.name}`,
+      updatedProduct.id,
+      'product',
+      {
+        entityName: updatedProduct.name,
+      },
+    );
+
+    return updatedProduct;
   }
 
   async remove(userId: number, id: number): Promise<void> {
     const product = await this.findOne(userId, id);
+    const productName = product.name;
+
     await this.productsRepository.remove(product);
+
+    // Log activity
+    await this.activitiesService.logActivity(
+      userId,
+      'product_updated',
+      `Deleted product: ${productName}`,
+      id,
+      'product',
+      {
+        entityName: productName,
+      },
+    );
   }
 
   async decreaseStock(
@@ -102,7 +147,22 @@ export class ProductsService {
 
     product.quantity -= quantity;
 
-    return this.productsRepository.save(product);
+    const updatedProduct = await this.productsRepository.save(product);
+
+    // Log activity
+    await this.activitiesService.logActivity(
+      userId,
+      'stock_decrease',
+      `Decreased stock of ${product.name} by ${quantity}`,
+      product.id,
+      'product',
+      {
+        entityName: product.name,
+        quantity: quantity,
+      },
+    );
+
+    return updatedProduct;
   }
 
   async increaseStock(
@@ -114,9 +174,25 @@ export class ProductsService {
 
     product.quantity += quantity;
 
-    return this.productsRepository.save(product);
+    const updatedProduct = await this.productsRepository.save(product);
+
+    // Log activity
+    await this.activitiesService.logActivity(
+      userId,
+      'stock_increase',
+      `Increased stock of ${product.name} by ${quantity}`,
+      product.id,
+      'product',
+      {
+        entityName: product.name,
+        quantity: quantity,
+      },
+    );
+
+    return updatedProduct;
   }
 
+  // Rest of your existing methods...
   async getLowStockProducts(userId: number): Promise<Product[]> {
     return this.productsRepository
       .createQueryBuilder('product')
@@ -173,7 +249,21 @@ export class ProductsService {
 
     product.isFavorite = !product.isFavorite;
 
-    return this.productsRepository.save(product);
+    const updatedProduct = await this.productsRepository.save(product);
+
+    // Log activity
+    await this.activitiesService.logActivity(
+      userId,
+      'product_updated',
+      `${updatedProduct.isFavorite ? 'Added' : 'Removed'} ${product.name} ${updatedProduct.isFavorite ? 'to' : 'from'} favorites`,
+      product.id,
+      'product',
+      {
+        entityName: product.name,
+      },
+    );
+
+    return updatedProduct;
   }
 
   async getProductStats(userId: number): Promise<any> {

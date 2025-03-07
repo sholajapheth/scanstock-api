@@ -1,3 +1,4 @@
+// src/sales/sales.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -10,7 +11,8 @@ import { SaleItem } from './entities/sale-item.entity';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { UpdateSaleDto } from './dto/update-sale.dto';
 import { v4 as uuidv4 } from 'uuid';
-import { ProductsService } from 'src/products/product.service';
+import { ProductsService } from '../products/product.service';
+import { ActivitiesService } from '../activities/activities.service';
 
 @Injectable()
 export class SalesService {
@@ -20,6 +22,7 @@ export class SalesService {
     @InjectRepository(SaleItem)
     private readonly saleItemsRepository: Repository<SaleItem>,
     private readonly productsService: ProductsService,
+    private readonly activitiesService: ActivitiesService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -82,6 +85,22 @@ export class SalesService {
         );
       }
 
+      // Log the sale activity
+      await this.activitiesService.logActivity(
+        userId,
+        'sale',
+        `New sale: ${createSaleDto.items.length} items for $${createSaleDto.total.toFixed(2)}`,
+        savedSale.id,
+        'sale',
+        {
+          amount: createSaleDto.total,
+          quantity: createSaleDto.items.reduce(
+            (sum, item) => sum + item.quantity,
+            0,
+          ),
+        },
+      );
+
       // Commit the transaction
       await queryRunner.commitTransaction();
 
@@ -133,7 +152,21 @@ export class SalesService {
     // Update sale fields
     Object.assign(sale, updateSaleDto);
 
-    return this.salesRepository.save(sale);
+    const updatedSale = await this.salesRepository.save(sale);
+
+    // Log activity
+    await this.activitiesService.logActivity(
+      userId,
+      'sale',
+      `Updated sale #${updatedSale.receiptNumber}`,
+      updatedSale.id,
+      'sale',
+      {
+        amount: updatedSale.total,
+      },
+    );
+
+    return updatedSale;
   }
 
   async cancel(userId: number, id: number): Promise<Sale> {
@@ -165,6 +198,18 @@ export class SalesService {
         }
       }
 
+      // Log activity
+      await this.activitiesService.logActivity(
+        userId,
+        'sale',
+        `Cancelled sale #${sale.receiptNumber}`,
+        sale.id,
+        'sale',
+        {
+          amount: sale.total,
+        },
+      );
+
       // Commit the transaction
       await queryRunner.commitTransaction();
 
@@ -180,7 +225,58 @@ export class SalesService {
   }
 
   async refund(userId: number, id: number): Promise<Sale> {
-    return this.cancel(userId, id); // Same logic as cancel for now
+    const sale = await this.findOne(userId, id);
+
+    // Cannot refund an already cancelled or refunded sale
+    if (sale.status !== 'completed') {
+      throw new BadRequestException(`Sale is already ${sale.status}`);
+    }
+
+    // Start a transaction
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Update sale status
+      sale.status = 'refunded';
+      await queryRunner.manager.save(sale);
+
+      // Restore stock for each item
+      for (const item of sale.items) {
+        if (item.productId) {
+          await this.productsService.increaseStock(
+            userId,
+            item.productId,
+            item.quantity,
+          );
+        }
+      }
+
+      // Log activity
+      await this.activitiesService.logActivity(
+        userId,
+        'sale',
+        `Refunded sale #${sale.receiptNumber}`,
+        sale.id,
+        'sale',
+        {
+          amount: sale.total,
+        },
+      );
+
+      // Commit the transaction
+      await queryRunner.commitTransaction();
+
+      return sale;
+    } catch (error) {
+      // Rollback the transaction in case of error
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      // Release the query runner
+      await queryRunner.release();
+    }
   }
 
   private generateReceiptNumber(): string {

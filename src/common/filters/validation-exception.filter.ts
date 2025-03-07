@@ -1,4 +1,10 @@
-import { ArgumentsHost, Catch, ExceptionFilter, Logger } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  Logger,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Catch()
@@ -17,25 +23,30 @@ export class ValidationExceptionFilter implements ExceptionFilter {
       exception.response.message &&
       Array.isArray(exception.response.message)
     ) {
-      // Format validation errors in a readable way
-      const validationErrors = exception.response.message;
+      // Your existing validation error handling
+      // ...
+    } else {
+      // Handle other exceptions properly
+      const status =
+        exception instanceof HttpException ? exception.getStatus() : 500;
+
+      const message =
+        exception.response?.message ||
+        exception.message ||
+        'Internal server error';
 
       this.logger.error({
         endpoint: `${request.method} ${request.url}`,
-        statusCode: 400,
-        validationErrors,
-        body: request.body,
+        statusCode: status,
+        message: message,
+        stack: exception.stack,
       });
 
-      return response.status(400).json({
-        statusCode: 400,
-        error: 'Bad Request',
-        message: 'Validation failed',
-        details: validationErrors,
+      return response.status(status).json({
+        statusCode: status,
+        error: exception.response?.error || 'Error',
+        message: message,
       });
     }
-
-    // Pass other exceptions to the default exception handler
-    throw exception;
   }
 }

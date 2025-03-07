@@ -10,7 +10,7 @@ import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
 import { SalesModule } from './sales/sales.module';
 import { LoggingMiddleware } from './logging/logging.middleware';
-
+import { ActivitiesModule } from './activities/activities.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -96,6 +96,7 @@ import { LoggingMiddleware } from './logging/logging.middleware';
     ProductsModule,
     CategoriesModule,
     SalesModule,
+    ActivitiesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

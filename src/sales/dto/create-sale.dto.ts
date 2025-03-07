@@ -117,4 +117,14 @@ export class CreateSaleDto {
   @IsOptional()
   @IsEnum(['cash', 'card', 'other'])
   paymentMethod?: string = 'cash';
+
+  @ApiPropertyOptional({
+    example: 'completed',
+    description: 'Status of the sale',
+    enum: ['pending', 'completed', 'cancelled'],
+    default: 'completed',
+  })
+  @IsOptional()
+  @IsEnum(['pending', 'completed', 'cancelled'])
+  status?: string = 'completed';
 }

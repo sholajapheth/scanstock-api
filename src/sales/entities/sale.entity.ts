@@ -36,7 +36,7 @@ export class Sale {
 
   @Column({
     type: 'enum',
-    enum: ['completed', 'cancelled', 'refunded'],
+    enum: ['pending', 'completed', 'cancelled'],
     default: 'completed',
   })
   status: string;
