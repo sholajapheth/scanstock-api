@@ -9,7 +9,11 @@ import {
 export class UpdateUserDto {
   @IsOptional()
   @IsString()
-  name?: string;
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  lastName?: string;
 
   @IsOptional()
   @IsEmail({}, { message: 'Please provide a valid email address' })
@@ -22,7 +26,7 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
-  businessName?: string;
+  profilePicture?: string;
 
   @IsOptional()
   @IsBoolean()

@@ -115,13 +115,64 @@ export class SalesService {
       await queryRunner.release();
     }
   }
+  async findAll(
+    userId: number,
+    filters?: { search?: string; dateFilter?: string; status?: string },
+  ): Promise<Sale[]> {
+    const queryBuilder = this.salesRepository
+      .createQueryBuilder('sale')
+      .where('sale.userId = :userId', { userId })
+      .leftJoinAndSelect('sale.items', 'items');
 
-  async findAll(userId: number): Promise<Sale[]> {
-    return this.salesRepository.find({
-      where: { userId },
-      relations: ['items'],
-      order: { createdAt: 'DESC' },
-    });
+    // Apply search filter if provided
+    if (filters?.search) {
+      queryBuilder.andWhere(
+        '(LOWER(sale.customerName) LIKE LOWER(:search) OR sale.receiptNumber LIKE :search)',
+        { search: `%${filters.search}%` },
+      );
+    }
+
+    // Apply date filter if provided
+    if (filters?.dateFilter) {
+      const today = new Date();
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+
+      switch (filters.dateFilter) {
+        case 'today':
+          queryBuilder.andWhere('sale.createdAt >= :startOfDay', {
+            startOfDay,
+          });
+          break;
+        case 'week':
+          const startOfWeek = new Date(today);
+          startOfWeek.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+          startOfWeek.setHours(0, 0, 0, 0);
+          queryBuilder.andWhere('sale.createdAt >= :startOfWeek', {
+            startOfWeek,
+          });
+          break;
+        case 'month':
+          const startOfMonth = new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            1,
+          );
+          queryBuilder.andWhere('sale.createdAt >= :startOfMonth', {
+            startOfMonth,
+          });
+          break;
+        // 'all' doesn't need a filter
+      }
+    }
+
+    // Apply status filter if provided
+    if (filters?.status && filters.status !== 'all') {
+      queryBuilder.andWhere('sale.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    return queryBuilder.orderBy('sale.createdAt', 'DESC').getMany();
   }
 
   async findOne(userId: number, id: number): Promise<Sale> {

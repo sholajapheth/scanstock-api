@@ -11,6 +11,9 @@ import { CategoriesModule } from './categories/categories.module';
 import { SalesModule } from './sales/sales.module';
 import { LoggingMiddleware } from './logging/logging.middleware';
 import { ActivitiesModule } from './activities/activities.module';
+import { BusinessModule } from './business/business.module';
+import { UpdatesModule } from './updates/updates.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -97,6 +100,8 @@ import { ActivitiesModule } from './activities/activities.module';
     CategoriesModule,
     SalesModule,
     ActivitiesModule,
+    BusinessModule,
+    UpdatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

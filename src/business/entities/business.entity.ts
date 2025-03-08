@@ -1,4 +1,4 @@
-// src/business/entities/business.entity.ts
+// Update src/business/entities/business.entity.ts to add customIndustry
 import {
   Entity,
   Column,
@@ -50,6 +50,9 @@ export class Business {
 
   @Column({ nullable: true })
   industry: string;
+
+  @Column({ nullable: true })
+  customIndustry: string;
 
   @Column({ default: true })
   isActive: boolean;

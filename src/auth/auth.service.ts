@@ -2,7 +2,6 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -40,7 +39,8 @@ export class AuthService {
       message: 'User registered successfully',
       user: {
         id: newUser.id,
-        name: newUser.name,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
         email: newUser.email,
       },
     };
@@ -73,7 +73,8 @@ export class AuthService {
     const payload: JwtPayload = {
       id: user.id,
       email: user.email,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -82,9 +83,10 @@ export class AuthService {
       message: 'Login successful',
       user: {
         id: user.id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
-        businessName: user.businessName,
+        businessName: user.business,
       },
       access_token: accessToken,
     };
