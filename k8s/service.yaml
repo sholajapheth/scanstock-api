@@ -7,5 +7,5 @@ spec:
     app: scanstock-api
   ports:
     - protocol: TCP 
-      port: 3000
+      port: 8080
   type: LoadBalancer  # Change to LoadBalancer or NodePort if needed
