@@ -1,0 +1,31 @@
+# ConfigMap for non-sensitive configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scanstock-config
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  
+  # Database Configuration
+  DB_HOST: "aws-0-us-west-1.pooler.supabase.com"
+  DB_PORT: "5432"
+  DB_USERNAME: "postgres.sifprmsmlbodtksffhmn"
+  DB_DATABASE: "postgres"
+  
+  # CORS Configuration
+  CORS_ORIGIN: "*"
+  
+  # Logging Configuration
+  LOG_LEVEL: "debug"
+  
+  # Supabase Configuration
+  SUPABASE_URL: "https://sifprmsmlbodtksffhmn.supabase.co"
+  SUPABASE_BUCKET: "avatars"
+  
+  # Update Configuration
+  UPDATE_ANDROID_URL: "https://play.google.com/store/apps/details?id=com.yourcompany.scanstockpro"
+  UPDATE_IOS_URL: "https://apps.apple.com/app/your-app-id"
+  UPDATE_MIN_VERSION: "1.0.0"
+  UPDATE_FORCE_UPDATE: "false"
+  UPDATE_IS_ACTIVE: "true"

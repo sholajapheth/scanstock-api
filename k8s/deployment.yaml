@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanstock-api
+spec:
+  selector:
+    matchLabels:
+      app: scanstock-api
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: scanstock-api
+    spec:
+      containers:
+        - name: scanstock-api
+          image: sholajapheth/scanstock-api:latest
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: scanstock-config
+            - secretRef:
+                name: scanstock-secrets
+          # Add node selector if your image is built only for a specific platform
+      nodeSelector:
+        kubernetes.io/arch: amd64

@@ -787,7 +787,7 @@
 
 "@nestjs/typeorm@^11.0.0":
   version "11.0.0"
-  resolved "https://registry.npmjs.org/@nestjs/typeorm/-/typeorm-11.0.0.tgz"
+  resolved "https://registry.yarnpkg.com/@nestjs/typeorm/-/typeorm-11.0.0.tgz#b0f45d6902396db89e0ac1f4e738c2ff3407b794"
   integrity sha512-SOeUQl70Lb2OfhGkvnh4KXWlsd+zA08RuuQgT7kKbzivngxzSo1Oc7Usu5VxCxACQC9wc2l9esOHILSJeK7rJA==
 
 "@nodelib/fs.scandir@2.1.5":
@@ -5495,7 +5495,7 @@ typedarray@^0.0.6:
 
 typeorm@^0.3.21:
   version "0.3.21"
-  resolved "https://registry.npmjs.org/typeorm/-/typeorm-0.3.21.tgz"
+  resolved "https://registry.yarnpkg.com/typeorm/-/typeorm-0.3.21.tgz#8da9e0f079302a263eb05a4376239cef055886fd"
   integrity sha512-lh4rUWl1liZGjyPTWpwcK8RNI5x4ekln+/JJOox1wCd7xbucYDOXWD+1cSzTN3L0wbTGxxOtloM5JlxbOxEufA==
   dependencies:
     "@sqltools/formatter" "^1.2.5"

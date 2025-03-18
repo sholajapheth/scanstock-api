@@ -39,7 +39,9 @@ export class LoggingMiddleware implements NestMiddleware {
 
       // Sanitize the response body
       const sanitizedResponse = responseBody
-        ? this.sanitizeData(JSON.parse(responseBody))
+        ? this.sanitizeData(
+            JSON.parse(responseBody) ? JSON.parse(responseBody) : responseBody,
+          )
         : null;
 
       this.logger.log(
