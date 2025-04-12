@@ -38,11 +38,17 @@ export class LoggingMiddleware implements NestMiddleware {
       const duration = Date.now() - startTime;
 
       // Sanitize the response body
-      const sanitizedResponse = responseBody
-        ? this.sanitizeData(
-            JSON.parse(responseBody) ? JSON.parse(responseBody) : responseBody,
-          )
-        : null;
+      let sanitizedResponse = null;
+      if (responseBody) {
+        try {
+          // Try to parse as JSON first
+          const parsedBody = JSON.parse(responseBody);
+          sanitizedResponse = this.sanitizeData(parsedBody);
+        } catch (e) {
+          // If parsing fails, treat as string
+          sanitizedResponse = this.sanitizeData(responseBody);
+        }
+      }
 
       this.logger.log(
         `Outgoing Response - ${method} ${originalUrl} ${statusCode} ${contentLength} - ${duration}ms`,

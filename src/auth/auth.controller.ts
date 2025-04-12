@@ -3,6 +3,11 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
+import {
+  RequestResetPasswordDto,
+  ResetPasswordDto,
+} from './dto/reset-password.dto';
+import { RequestOtpDto, ValidateOtpDto } from './dto/otp.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -22,7 +27,8 @@ export class AuthController {
           type: 'object',
           properties: {
             id: { type: 'number', example: 1 },
-            name: { type: 'string', example: 'John Doe' },
+            firstName: { type: 'string', example: 'John' },
+            lastName: { type: 'string', example: 'Doe' },
             email: { type: 'string', example: 'user@example.com' },
           },
         },
@@ -49,7 +55,8 @@ export class AuthController {
           type: 'object',
           properties: {
             id: { type: 'number', example: 1 },
-            name: { type: 'string', example: 'John Doe' },
+            firstName: { type: 'string', example: 'John' },
+            lastName: { type: 'string', example: 'Doe' },
             email: { type: 'string', example: 'user@example.com' },
             businessName: { type: 'string', example: 'My Store' },
           },
@@ -67,5 +74,96 @@ export class AuthController {
   })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Post('password/reset-request')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiBody({ type: RequestResetPasswordDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset instructions sent.',
+    schema: {
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Password reset instructions have been sent to your email',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Not Found - User not found' })
+  async requestPasswordReset(@Body() requestResetDto: RequestResetPasswordDto) {
+    return this.authService.requestPasswordReset(requestResetDto);
+  }
+
+  @Post('password/reset')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password using OTP' })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password has been reset.',
+    schema: {
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Password has been successfully reset',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid or expired OTP',
+  })
+  @ApiResponse({ status: 404, description: 'Not Found - User not found' })
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  @Post('otp/request')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request OTP' })
+  @ApiBody({ type: RequestOtpDto })
+  @ApiResponse({
+    status: 200,
+    description: 'OTP sent successfully.',
+    schema: {
+      properties: {
+        message: {
+          type: 'string',
+          example: 'OTP has been sent to your email',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Not Found - User not found' })
+  async requestOtp(@Body() requestOtpDto: RequestOtpDto) {
+    return this.authService.requestOtp(requestOtpDto);
+  }
+
+  @Post('otp/validate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Validate OTP' })
+  @ApiBody({ type: ValidateOtpDto })
+  @ApiResponse({
+    status: 200,
+    description: 'OTP validated successfully.',
+    schema: {
+      properties: {
+        message: {
+          type: 'string',
+          example: 'OTP validated successfully',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid or expired OTP',
+  })
+  async validateOtp(@Body() validateOtpDto: ValidateOtpDto) {
+    return this.authService.validateOtp(validateOtpDto);
   }
 }

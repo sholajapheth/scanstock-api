@@ -13,6 +13,7 @@ import { LoggingMiddleware } from './logging/logging.middleware';
 import { ActivitiesModule } from './activities/activities.module';
 import { BusinessModule } from './business/business.module';
 import { UpdatesModule } from './updates/updates.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -102,6 +103,7 @@ import { UpdatesModule } from './updates/updates.module';
     ActivitiesModule,
     BusinessModule,
     UpdatesModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

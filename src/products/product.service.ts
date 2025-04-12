@@ -231,17 +231,31 @@ export class ProductsService {
     });
   }
 
-  async searchProducts(userId: number, query: string): Promise<Product[]> {
-    return this.productsRepository
+  async searchProducts(
+    userId: number,
+    query: string,
+    page = 1,
+    limit = 10,
+  ): Promise<{ items: Product[]; total: number }> {
+    const queryBuilder = this.productsRepository
       .createQueryBuilder('product')
       .where('product.userId = :userId', { userId })
-      .andWhere('product.isActive = true')
-      .andWhere(
+      .andWhere('product.isActive = true');
+
+    if (query) {
+      queryBuilder.andWhere(
         '(LOWER(product.name) LIKE LOWER(:query) OR LOWER(product.barcode) LIKE LOWER(:query) OR LOWER(product.sku) LIKE LOWER(:query))',
         { query: `%${query}%` },
-      )
+      );
+    }
+
+    const [items, total] = await queryBuilder
       .orderBy('product.name', 'ASC')
-      .getMany();
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { items, total };
   }
 
   async toggleFavorite(userId: number, id: number): Promise<Product> {

@@ -2,6 +2,8 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -9,12 +11,21 @@ import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { LoginDto } from './dto/login.dto';
+import { EmailService } from '../email/email.service';
+import { OtpService } from './services/otp.service';
+import {
+  RequestResetPasswordDto,
+  ResetPasswordDto,
+} from './dto/reset-password.dto';
+import { RequestOtpDto, ValidateOtpDto } from './dto/otp.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
+    private readonly otpService: OtpService,
   ) {}
 
   async register(createUserDto: CreateUserDto) {
@@ -34,6 +45,12 @@ export class AuthService {
       ...createUserDto,
       password: hashedPassword,
     });
+
+    // Send welcome email
+    await this.emailService.sendWelcomeEmail(
+      newUser.email,
+      `${newUser.firstName} ${newUser.lastName}`,
+    );
 
     return {
       message: 'User registered successfully',
@@ -89,6 +106,93 @@ export class AuthService {
         businessName: user.business,
       },
       access_token: accessToken,
+    };
+  }
+
+  async requestPasswordReset(requestResetDto: RequestResetPasswordDto) {
+    const { email } = requestResetDto;
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Generate OTP
+    const otp = this.otpService.generateOtp();
+    this.otpService.storeOtp(email, otp);
+
+    // Send reset password email
+    await this.emailService.sendPasswordResetEmail(
+      'sholajapheth@gmail.com',
+
+      `${user.firstName} ${user.lastName}`,
+      otp,
+    );
+
+    return {
+      message: 'Password reset instructions have been sent to your email',
+    };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const { email, otp, newPassword } = resetPasswordDto;
+
+    // Validate OTP
+    const isValidOtp = this.otpService.validateOtp(email, otp);
+    if (!isValidOtp) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Hash new password
+    const hashedPassword = await this.hashPassword(newPassword);
+
+    // Update password
+    await this.usersService.updatePassword(user.id, hashedPassword);
+
+    return {
+      message: 'Password has been successfully reset',
+    };
+  }
+
+  async requestOtp(requestOtpDto: RequestOtpDto) {
+    const { email } = requestOtpDto;
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Generate OTP
+    const otp = this.otpService.generateOtp();
+    this.otpService.storeOtp(email, otp);
+
+    // Send OTP email
+    await this.emailService.sendOtpEmail(
+      'sholajapheth@gmail.com',
+      `${user.firstName} ${user.lastName}`,
+      otp,
+    );
+
+    return {
+      message: 'OTP has been sent to your email',
+    };
+  }
+
+  async validateOtp(validateOtpDto: ValidateOtpDto) {
+    const { email, otp } = validateOtpDto;
+
+    const isValid = this.otpService.validateOtp(email, otp);
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    return {
+      message: 'OTP validated successfully',
     };
   }
 

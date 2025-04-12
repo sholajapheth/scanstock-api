@@ -113,4 +113,8 @@ export class UsersService {
     const user = await this.findById(id);
     await this.usersRepository.remove(user);
   }
+
+  async updatePassword(userId: number, hashedPassword: string): Promise<void> {
+    await this.usersRepository.update(userId, { password: hashedPassword });
+  }
 }
