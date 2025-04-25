@@ -157,6 +157,38 @@ export class EmailService {
         </body>
         </html>
       `,
+      verifyEmail: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Verify Your Email</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; color: #333333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background-color: #00B74A; padding: 30px 20px; text-align: center;">
+                    <img src="icon.png" alt="ScanStock Logo" style="width: 100px; height: 100px;">
+                    <h1 style="color: #ffffff; margin: 0;">ScanStock</h1>
+                </div>
+                <div style="padding: 30px 20px; background-color: #ffffff;">
+                    <div style="font-size: 24px; color: #00B74A; margin-bottom: 20px;">Verify Your Email</div>
+                    <p>Hello ${params.name},</p>
+                    <p>Thank you for registering with ScanStock. To complete your registration, please verify your email using the code below:</p>
+                    <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0;">
+                        ${params.otp}
+                    </div>
+                    <p>This code will expire in 15 minutes. If you didn't create an account with ScanStock, please ignore this email.</p>
+                    <p>Best regards,<br>The ScanStock Team</p>
+                </div>
+                <div style="background-color: #f5f5f5; padding: 20px; text-align: center; font-size: 12px; color: #666666;">
+                    <p>This is a system-generated email. Please do not reply.</p>
+                    <p>© ${new Date().getFullYear()} ScanStock. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+      `,
     };
 
     return templates[templateName] || '';
@@ -183,5 +215,14 @@ export class EmailService {
   ): Promise<boolean> {
     const html = this.getEmailTemplate('otp', { name, otp });
     return this.sendEmail(email, 'Your Verification Code - ScanStock', html);
+  }
+
+  async sendVerificationEmail(
+    email: string,
+    name: string,
+    otp: string,
+  ): Promise<boolean> {
+    const html = this.getEmailTemplate('verifyEmail', { name, otp });
+    return this.sendEmail(email, 'Verify Your Email - ScanStock', html);
   }
 }

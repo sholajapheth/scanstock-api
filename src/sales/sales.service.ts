@@ -360,9 +360,36 @@ export class SalesService {
       .select('SUM(sale.total)', 'total')
       .getRawOne();
 
+    // Get today's sales data
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayQuery = this.salesRepository
+      .createQueryBuilder('sale')
+      .where('sale.userId = :userId', { userId })
+      .andWhere('sale.status = :status', { status: 'completed' })
+      .andWhere('sale.createdAt >= :today', { today })
+      .andWhere('sale.createdAt < :tomorrow', { tomorrow });
+
+    const todaySalesCount = await todayQuery.getCount();
+    const todayRevenue = await todayQuery
+      .select('SUM(sale.total)', 'total')
+      .getRawOne();
+
+    // Calculate average sale value for today
+    const todayAverage =
+      todaySalesCount > 0 ? (todayRevenue?.total || 0) / todaySalesCount : 0;
+
     return {
       totalSales,
       totalRevenue: totalRevenue?.total || 0,
+      today: {
+        count: todaySalesCount,
+        total: todayRevenue?.total || 0,
+        average: todayAverage,
+      },
     };
   }
 }

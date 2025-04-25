@@ -29,7 +29,7 @@ import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { SupabaseStorageService } from '../services/SupabaseStorageService';
-
+import { BusinessService } from '../business/business.service';
 @ApiTags('users')
 @ApiBearerAuth('JWT-auth')
 @Controller('users')
@@ -38,6 +38,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly supabaseStorageService: SupabaseStorageService,
+    private readonly businessService: BusinessService,
   ) {}
 
   @Get('me')
@@ -46,8 +47,13 @@ export class UsersController {
     status: 200,
     description: 'Returns the profile of the current authenticated user.',
   })
-  getProfile(@Request() req) {
-    return this.usersService.findById(req.user.id);
+  async getProfile(@Request() req) {
+    const user = await this.usersService.findById(req.user.id);
+    const business = await this.businessService.findByOwnerId(req.user.id);
+
+    const { password, ...userWithoutPassword } = user;
+
+    return { ...userWithoutPassword, business: business ? business : null };
   }
 
   @Patch(':id')

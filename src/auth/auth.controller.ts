@@ -166,4 +166,52 @@ export class AuthController {
   async validateOtp(@Body() validateOtpDto: ValidateOtpDto) {
     return this.authService.validateOtp(validateOtpDto);
   }
+
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify email' })
+  @ApiBody({ type: ValidateOtpDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Email verified successfully.',
+    schema: {
+      properties: {
+        message: { type: 'string', example: 'Email verified successfully' },
+      },
+    },
+  })
+  async verifyEmail(@Body() verifyEmailDto: ValidateOtpDto) {
+    return this.authService.verifyEmail(verifyEmailDto);
+  }
+
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend verification email' })
+  @ApiBody({
+    schema: {
+      properties: {
+        email: { type: 'string', example: 'user@example.com' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Verification email sent successfully.',
+    schema: {
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Verification email sent successfully',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Email already verified',
+  })
+  @ApiResponse({ status: 404, description: 'Not Found - User not found' })
+  async resendVerificationEmail(@Body('email') email: string) {
+    return this.authService.resendVerificationEmail(email);
+  }
 }

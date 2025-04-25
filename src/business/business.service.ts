@@ -39,13 +39,56 @@ export class BusinessService {
     return business;
   }
 
+  async findByOwnerId(userId: number): Promise<Business> {
+    const business = await this.businessRepository.findOne({
+      where: { ownerId: userId },
+    });
+    if (!business) {
+      return null;
+    }
+
+    return business;
+  }
+
+  async findById(id: number): Promise<Business> {
+    const business = await this.businessRepository.findOne({
+      where: { id },
+    });
+
+    if (!business) {
+      throw new NotFoundException(`Business not found for ID ${id}`);
+    }
+
+    return business;
+  }
+
   async update(
     userId: number,
     updateBusinessDto: UpdateBusinessDto,
   ): Promise<Business> {
-    const business = await this.findByOwner(userId);
+    let business: Business;
 
-    // Update business fields
+    try {
+      business = await this.findByOwner(userId);
+    } catch (error) {
+      // Check if the error is specifically about not finding a business for this user
+      if (
+        error instanceof NotFoundException &&
+        error.message.includes(`Business not found for user with ID ${userId}`)
+      ) {
+        // If no business exists for the user, create a new one
+        business = this.businessRepository.create({
+          ...updateBusinessDto,
+          ownerId: userId,
+        });
+        return this.businessRepository.save(business);
+      }
+
+      // If it's a different error, rethrow it
+      throw error;
+    }
+
+    // Update business fields if business exists
     Object.assign(business, updateBusinessDto);
 
     return this.businessRepository.save(business);

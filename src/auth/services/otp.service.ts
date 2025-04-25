@@ -19,6 +19,21 @@ export class OtpService {
     this.otpStore.set(email, { otp, expires });
   }
 
+  getStoredOtp(email: string): { otp: string; expires: Date } | null {
+    const storedData = this.otpStore.get(email);
+    if (!storedData) {
+      return null;
+    }
+
+    // Check if OTP has expired
+    if (new Date() > storedData.expires) {
+      this.otpStore.delete(email);
+      return null;
+    }
+
+    return storedData;
+  }
+
   validateOtp(email: string, otp: string): boolean {
     const storedData = this.otpStore.get(email);
 

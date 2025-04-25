@@ -46,6 +46,17 @@ export class AuthService {
       password: hashedPassword,
     });
 
+    // Generate verification OTP
+    const verificationOtp = this.otpService.generateOtp();
+    this.otpService.storeOtp(newUser.email, verificationOtp);
+
+    // Send verification email
+    await this.emailService.sendVerificationEmail(
+      newUser.email,
+      `${newUser.firstName} ${newUser.lastName}`,
+      verificationOtp,
+    );
+
     // Send welcome email
     await this.emailService.sendWelcomeEmail(
       newUser.email,
@@ -53,7 +64,8 @@ export class AuthService {
     );
 
     return {
-      message: 'User registered successfully',
+      message:
+        'User registered successfully. Please check your email to verify your account.',
       user: {
         id: newUser.id,
         firstName: newUser.firstName,
@@ -63,11 +75,63 @@ export class AuthService {
     };
   }
 
+  async verifyEmail(validateOtpDto: ValidateOtpDto) {
+    const { email, otp } = validateOtpDto;
+
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    const isValid = this.otpService.validateOtp(email, otp);
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired verification code');
+    }
+
+    // Update user's email verification status
+    await this.usersService.updateEmailVerification(user.id.toString(), true);
+
+    return {
+      message: 'Email verified successfully',
+    };
+  }
+
+  async resendVerificationEmail(email: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Generate new verification OTP
+    const verificationOtp = this.otpService.generateOtp();
+    this.otpService.storeOtp(email, verificationOtp);
+
+    // Send verification email
+    await this.emailService.sendVerificationEmail(
+      email,
+      `${user.firstName} ${user.lastName}`,
+      verificationOtp,
+    );
+
+    return {
+      message: 'Verification email sent successfully',
+    };
+  }
+
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
     // Find user by email
     const user = await this.usersService.findByEmail(email);
+    console.log('user', user);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -76,6 +140,13 @@ export class AuthService {
     if (!user.isActive) {
       throw new UnauthorizedException('User account is inactive');
     }
+
+    // // Check if email is verified
+    // if (!user.isEmailVerified) {
+    //   throw new UnauthorizedException(
+    //     'Please verify your email before logging in',
+    //   );
+    // }
 
     // Verify password
     const isPasswordValid = await this.comparePasswords(
@@ -122,9 +193,14 @@ export class AuthService {
     this.otpService.storeOtp(email, otp);
 
     // Send reset password email
-    await this.emailService.sendPasswordResetEmail(
-      'sholajapheth@gmail.com',
+    // In development environment, send to developer email, otherwise send to user's email
+    const emailTo =
+      process.env.NODE_ENV === 'development'
+        ? 'sholajapheth@gmail.com'
+        : user.email;
 
+    await this.emailService.sendPasswordResetEmail(
+      emailTo,
       `${user.firstName} ${user.lastName}`,
       otp,
     );
@@ -137,15 +213,15 @@ export class AuthService {
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
     const { email, otp, newPassword } = resetPasswordDto;
 
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     // Validate OTP
     const isValidOtp = this.otpService.validateOtp(email, otp);
     if (!isValidOtp) {
       throw new BadRequestException('Invalid or expired OTP');
-    }
-
-    const user = await this.usersService.findByEmail(email);
-    if (!user) {
-      throw new NotFoundException('User not found');
     }
 
     // Hash new password
@@ -184,15 +260,16 @@ export class AuthService {
   }
 
   async validateOtp(validateOtpDto: ValidateOtpDto) {
-    const { email, otp } = validateOtpDto;
+    const { email } = validateOtpDto;
 
-    const isValid = this.otpService.validateOtp(email, otp);
-    if (!isValid) {
+    // Just check if a valid OTP exists
+    const storedData = this.otpService.getStoredOtp(email);
+    if (!storedData) {
       throw new BadRequestException('Invalid or expired OTP');
     }
 
     return {
-      message: 'OTP validated successfully',
+      message: 'OTP is valid',
     };
   }
 

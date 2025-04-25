@@ -117,4 +117,8 @@ export class UsersService {
   async updatePassword(userId: number, hashedPassword: string): Promise<void> {
     await this.usersRepository.update(userId, { password: hashedPassword });
   }
+
+  async updateEmailVerification(userId: string, isVerified: boolean) {
+    return this.usersRepository.update(userId, { isEmailVerified: isVerified });
+  }
 }
